@@ -1,4 +1,4 @@
--- Source (ModuleScript) - Your UI Library
+-- Source.lua - XenUI Library (Updated with Toggle & Slider)
 local Library = {}
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -9,21 +9,17 @@ local playerGui = player:WaitForChild("PlayerGui")
 local windows = {}
 local toggleKey = Enum.KeyCode.RightShift  -- Change to your preferred key
 
--- Create main ScreenGui
-local function createGui()
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "MyUILib"
-    screenGui.ResetOnSpawn = false
-    screenGui.Parent = playerGui
-    return screenGui
-end
+-- Create main ScreenGui (shared for all windows)
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "XenUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
 
 function Library:CreateWindow(options)
     options = options or {}
-    local title = options.Title or "My UI Library"
+    local title = options.Title or "XenUI"
     local size = options.Size or UDim2.new(0, 450, 0, 350)
     
-    local screenGui = createGui()
     local mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainWindow"
     mainFrame.Size = size
@@ -58,7 +54,7 @@ function Library:CreateWindow(options)
     
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Name = "Title"
-    titleLabel.Size = UDim2.new(1, -10, 1, 0)
+    titleLabel.Size = UDim2.new(1, -40, 1, 0)
     titleLabel.Position = UDim2.new(0, 10, 0, 0)
     titleLabel.BackgroundTransparency = 1
     titleLabel.Text = title
@@ -66,6 +62,26 @@ function Library:CreateWindow(options)
     titleLabel.TextScaled = true
     titleLabel.Font = Enum.Font.GothamBold
     titleLabel.Parent = titleBar
+    
+    -- Close button
+    local closeButton = Instance.new("TextButton")
+    closeButton.Name = "Close"
+    closeButton.Size = UDim2.new(0, 30, 0, 30)
+    closeButton.Position = UDim2.new(1, -35, 0, 2)
+    closeButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    closeButton.Text = "X"
+    closeButton.TextColor3 = Color3.new(1,1,1)
+    closeButton.Font = Enum.Font.GothamBold
+    closeButton.Parent = titleBar
+    
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.CornerRadius = UDim.new(0, 6)
+    closeCorner.Parent = closeButton
+    
+    closeButton.MouseButton1Click:Connect(function()
+        mainFrame:Destroy()
+        table.remove(windows, table.find(windows, window))
+    end)
     
     -- Content frame with padding
     local contentFrame = Instance.new("Frame")
@@ -130,7 +146,121 @@ function Library:CreateWindow(options)
         return button
     end
     
-    -- Add more: Toggle, Slider, etc. (ask me for code!)
+    -- New: Toggle
+    function window:Toggle(text, callback, default)
+        local toggleValue = default or false
+        
+        local toggleFrame = Instance.new("Frame")
+        toggleFrame.Name = text
+        toggleFrame.Size = UDim2.new(1, 0, 0, 35)
+        toggleFrame.BackgroundTransparency = 1
+        toggleFrame.Parent = contentFrame
+        
+        local toggleLabel = Instance.new("TextLabel")
+        toggleLabel.Size = UDim2.new(1, -60, 1, 0)
+        toggleLabel.BackgroundTransparency = 1
+        toggleLabel.Text = text
+        toggleLabel.TextColor3 = Color3.new(1,1,1)
+        toggleLabel.TextScaled = true
+        toggleLabel.Font = Enum.Font.Gotham
+        toggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+        toggleLabel.Parent = toggleFrame
+        
+        local toggleButton = Instance.new("TextButton")
+        toggleButton.Size = UDim2.new(0, 50, 0, 25)
+        toggleButton.Position = UDim2.new(1, -50, 0.5, -12.5)
+        toggleButton.BackgroundColor3 = toggleValue and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
+        toggleButton.Text = toggleValue and "On" or "Off"
+        toggleButton.TextColor3 = Color3.new(1,1,1)
+        toggleButton.Font = Enum.Font.Gotham
+        toggleButton.Parent = toggleFrame
+        
+        local togCorner = Instance.new("UICorner")
+        togCorner.CornerRadius = UDim.new(0, 6)
+        togCorner.Parent = toggleButton
+        
+        local togStroke = Instance.new("UIStroke")
+        togStroke.Color = Color3.fromRGB(65, 65, 65)
+        togStroke.Thickness = 1
+        togStroke.Parent = toggleButton
+        
+        toggleButton.MouseButton1Click:Connect(function()
+            toggleValue = not toggleValue
+            toggleButton.Text = toggleValue and "On" or "Off"
+            toggleButton.BackgroundColor3 = toggleValue and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
+            callback(toggleValue)
+        end)
+        
+        return toggleButton
+    end
+    
+    -- New: Slider
+    function window:Slider(text, min, max, default, callback)
+        local sliderValue = default or min
+        
+        local sliderFrame = Instance.new("Frame")
+        sliderFrame.Name = text
+        sliderFrame.Size = UDim2.new(1, 0, 0, 50)
+        sliderFrame.BackgroundTransparency = 1
+        sliderFrame.Parent = contentFrame
+        
+        local sliderLabel = Instance.new("TextLabel")
+        sliderLabel.Size = UDim2.new(1, 0, 0, 20)
+        sliderLabel.BackgroundTransparency = 1
+        sliderLabel.Text = text .. ": " .. sliderValue
+        sliderLabel.TextColor3 = Color3.new(1,1,1)
+        sliderLabel.TextScaled = true
+        sliderLabel.Font = Enum.Font.Gotham
+        sliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+        sliderLabel.Parent = sliderFrame
+        
+        local sliderBar = Instance.new("Frame")
+        sliderBar.Size = UDim2.new(1, 0, 0, 10)
+        sliderBar.Position = UDim2.new(0, 0, 0, 25)
+        sliderBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        sliderBar.Parent = sliderFrame
+        
+        local barCorner = Instance.new("UICorner")
+        barCorner.CornerRadius = UDim.new(0, 5)
+        barCorner.Parent = sliderBar
+        
+        local fill = Instance.new("Frame")
+        fill.Name = "Fill"
+        fill.Size = UDim2.new((sliderValue - min) / (max - min), 0, 1, 0)
+        fill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        fill.Parent = sliderBar
+        
+        local fillCorner = Instance.new("UICorner")
+        fillCorner.CornerRadius = UDim.new(0, 5)
+        fillCorner.Parent = fill
+        
+        local sliderButton = Instance.new("TextButton")
+        sliderButton.Size = UDim2.new(1, 0, 1, 0)
+        sliderButton.BackgroundTransparency = 1
+        sliderButton.Text = ""
+        sliderButton.Parent = sliderBar
+        
+        local dragging = false
+        sliderButton.MouseButton1Down:Connect(function()
+            dragging = true
+        end)
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = false
+            end
+        end)
+        sliderButton.InputChanged:Connect(function(input)
+            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                local relativeX = math.clamp((input.Position.X - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)
+                sliderValue = math.floor(min + relativeX * (max - min))
+                fill.Size = UDim2.new(relativeX, 0, 1, 0)
+                sliderLabel.Text = text .. ": " .. sliderValue
+                callback(sliderValue)
+            end
+        end)
+        
+        return sliderFrame
+    end
     
     table.insert(windows, window)
     return window
